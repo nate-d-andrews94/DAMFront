@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import AssetGrid from '@/components/assets/AssetGrid';
 import FilterPanel from '@/components/assets/FilterPanel';
 import FolderNavigation from '@/components/assets/FolderNavigation';
+import QuickSearchShortcuts from '@/components/search/QuickSearchShortcuts';
 import Button from '@/components/ui/Button';
 import { Asset } from '@/types/asset.types';
 import useAssetFilters from '@/hooks/useAssetFilters';
@@ -150,7 +151,10 @@ const AssetLibraryPage = () => {
             />
             <SearchButton type="submit">Search</SearchButton>
           </SearchForm>
-          <UploadButton onClick={handleUploadClick}>Upload</UploadButton>
+          <ButtonGroup>
+            <AdvancedSearchLink to="/search">Advanced Search</AdvancedSearchLink>
+            <UploadButton onClick={handleUploadClick}>Upload</UploadButton>
+          </ButtonGroup>
         </HeaderRight>
       </PageHeader>
       
@@ -232,18 +236,24 @@ const AssetLibraryPage = () => {
               <LoadingText>Loading assets...</LoadingText>
             </LoadingContainer>
           ) : (
-            <AssetGrid
-              assets={filteredByTypeAssets || []}
-              onAssetClick={handleAssetClick}
-              isLoading={false}
-              emptyMessage={
-                searchQuery || (selectedFilterValues && selectedFilterValues.length > 0) || assetTypeFilter !== 'all'
-                  ? 'No assets match your filters. Try adjusting your search criteria.'
-                  : currentFolderId 
-                    ? `No assets found in this folder. Upload assets or move them here.`
-                    : 'No assets found. Upload assets to get started.'
-              }
-            />
+            <>
+              {!searchQuery && (!selectedFilterValues || selectedFilterValues.length === 0) && assetTypeFilter === 'all' && !currentFolderId && (
+                <QuickSearchShortcuts />
+              )}
+              
+              <AssetGrid
+                assets={filteredByTypeAssets || []}
+                onAssetClick={handleAssetClick}
+                isLoading={false}
+                emptyMessage={
+                  searchQuery || (selectedFilterValues && selectedFilterValues.length > 0) || assetTypeFilter !== 'all'
+                    ? 'No assets match your filters. Try adjusting your search criteria.'
+                    : currentFolderId 
+                      ? `No assets found in this folder. Upload assets or move them here.`
+                      : 'No assets found. Upload assets to get started.'
+                }
+              />
+            </>
           )}
         </MainContent>
       </ContentContainer>
@@ -348,6 +358,32 @@ const SearchButton = styled.button`
   
   &:hover {
     background-color: ${({ theme }) => theme.colors.primaryDark};
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing[2]};
+`;
+
+const AdvancedSearchLink = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: ${({ theme }) => `${theme.spacing[2]} ${theme.spacing[4]}`};
+  background-color: transparent;
+  color: ${({ theme }) => theme.colors.primary};
+  border: 1px solid ${({ theme }) => theme.colors.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-weight: ${({ theme }) => theme.typography.fontWeights.medium};
+  cursor: pointer;
+  transition: all ${({ theme }) => theme.transitions.fast};
+  text-decoration: none;
+  white-space: nowrap;
+  
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.primaryLight + '20'};
+    text-decoration: none;
   }
 `;
 

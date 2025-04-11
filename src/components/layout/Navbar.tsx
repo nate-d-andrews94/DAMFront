@@ -29,6 +29,24 @@ const Navbar = () => {
             Asset Library
           </NavLink>
           <NavLink 
+            to="/search" 
+            isActive={location.pathname.startsWith('/search')}
+          >
+            Advanced Search
+          </NavLink>
+          <NavLink 
+            to="/folders" 
+            isActive={location.pathname.startsWith('/folders')}
+          >
+            Folders
+          </NavLink>
+          <NavLink 
+            to="/tags" 
+            isActive={location.pathname.startsWith('/tags')}
+          >
+            Tags
+          </NavLink>
+          <NavLink 
             to="/admin" 
             isActive={location.pathname.startsWith('/admin')}
           >

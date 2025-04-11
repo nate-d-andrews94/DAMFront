@@ -6,6 +6,9 @@ import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import AssetLibraryPage from './pages/AssetLibraryPage';
 import AssetDetailsPage from './pages/AssetDetailsPage';
+import AdvancedSearchPage from './pages/AdvancedSearchPage';
+import FolderManagementPage from './pages/FolderManagementPage';
+import TagManagementPage from './pages/TagManagementPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminUploadPage from './pages/admin/AdminUploadPage';
 import AdminFilterCategoryPage from './pages/admin/AdminFilterCategoryPage';
@@ -20,6 +23,9 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/assets" element={<AssetLibraryPage />} />
           <Route path="/assets/:assetId" element={<AssetDetailsPage />} />
+          <Route path="/search" element={<AdvancedSearchPage />} />
+          <Route path="/folders" element={<FolderManagementPage />} />
+          <Route path="/tags" element={<TagManagementPage />} />
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/upload" element={<AdminUploadPage />} />
           <Route path="/admin/filters" element={<AdminFilterCategoryPage />} />
