@@ -2,6 +2,7 @@
   "name": "damfront",
   "version": "0.1.0",
   "description": "Digital Asset Management Frontend",
+  "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -17,7 +18,7 @@
     "claude:context": "node scripts/update-claude-context.js",
     "claude:audit": "node scripts/claude-security-audit.js",
     "claude:pilot": "node scripts/claude-pilot.js",
-    "claude:report": "node -e \"console.log(require('./scripts/track-claude-usage.js').generateReport())\"",
+    "claude:report": "node -e \"console.log(await import('./scripts/track-claude-usage.js').then(m => m.generateReport()))\"",
     "claude:agent": "node scripts/claude-agent.js"
   },
   "dependencies": {
@@ -40,15 +41,18 @@
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "@types/uuid": "^9.0.8",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
+    "@typescript-eslint/parser": "^8.29.1",
     "@vitejs/plugin-react": "^4.2.1",
-    "eslint": "^8.56.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
+    "eslint": "^9.24.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "glob": "^11.0.1",
     "jsdom": "^24.0.0",
+    "lru-cache": "^11.1.0",
+    "rimraf": "^6.0.1",
     "typescript": "^5.2.2",
-    "vite": "^5.1.0",
-    "vitest": "^1.2.2"
+    "vite": "^6.2.6",
+    "vitest": "^3.1.1"
   }
 }

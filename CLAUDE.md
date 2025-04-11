@@ -1,6 +1,6 @@
 # DAMFront Developer Guidelines
 
-## Commands (to be implemented)
+## Commands
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
@@ -29,4 +29,17 @@
 - Use React hooks for state management
 - Implement TDD when appropriate
 
-Note: Configure ESLint, Prettier, and Jest when setting up the project.
+## Package Management
+- Never use npm packages with ANY level of vulnerability
+- Avoid deprecated packages
+- Run `npm audit` before adding any new dependency
+- Prefer well-maintained packages with regular updates
+- Use exact versions for critical dependencies
+- Document why a specific package was chosen in comments
+
+## Security
+- Never store secrets or API keys in the codebase
+- Use environment variables for configuration
+- Validate all user inputs
+- Implement proper authentication and authorization
+- Follow OWASP security guidelines
