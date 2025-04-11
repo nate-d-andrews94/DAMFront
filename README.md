@@ -84,9 +84,21 @@ npm run db:reset
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
 - `npm run test` - Run tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage report
 - `npm run db:up` - Start the database
 - `npm run db:down` - Stop the database
 - `npm run db:reset` - Reset the database
+
+### Testing Strategy
+
+The project uses Vitest and React Testing Library for testing:
+
+- **Unit Tests**: For individual components, hooks, and services
+- **Integration Tests**: For workflows spanning multiple components
+- **Mock Data**: For API services and database interactions
+
+Tests are organized alongside their corresponding code files in `__tests__` directories.
 
 ## Database Schema
 
