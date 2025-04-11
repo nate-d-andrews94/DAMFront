@@ -65,14 +65,30 @@ export interface SharedLink {
   token: string;
 }
 
+export interface AssetVersion {
+  id: string;
+  assetId: string;
+  versionNumber: number;
+  fileUrl: string;
+  thumbnailUrl?: string;
+  fileSize: number;
+  createdAt: string;
+  createdBy: string;
+  notes?: string;
+  metadata?: AssetMetadata;
+  isCurrentVersion: boolean;
+}
+
 export interface AssetActivity {
   id: string;
   assetId: string;
   sharedLinkId?: string;
-  action: 'view' | 'download' | 'share';
+  action: 'view' | 'download' | 'share' | 'edit' | 'version_upload' | 'version_restore';
   timestamp: string;
   ipAddress?: string;
   userAgent?: string;
   referrer?: string;
+  actorName: string;
+  versionNumber?: number;
   contextData?: Record<string, string>;
 }

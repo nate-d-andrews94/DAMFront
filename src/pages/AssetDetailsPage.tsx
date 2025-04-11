@@ -4,73 +4,31 @@ import styled from 'styled-components';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import AssetService from '@/services/assetService';
-import { Asset } from '@/types/asset.types';
-
-interface AssetVersion {
-  id: string;
-  versionNumber: number;
-  createdAt: string;
-  createdBy: string;
-  notes: string;
-}
-
-interface AssetActivity {
-  id: string;
-  action: 'view' | 'download' | 'share';
-  timestamp: string;
-  user: string;
-}
-
-// Mock versions
-const mockVersions: AssetVersion[] = [
-  {
-    id: 'v1',
-    versionNumber: 1,
-    createdAt: '2025-03-01T10:30:00Z',
-    createdBy: 'John Doe',
-    notes: 'Initial upload'
-  },
-  {
-    id: 'v2',
-    versionNumber: 2,
-    createdAt: '2025-03-15T14:20:00Z',
-    createdBy: 'Jane Smith',
-    notes: 'Updated with new branding colors'
-  }
-];
-
-// Mock activity
-const mockActivity: AssetActivity[] = [
-  {
-    id: 'a1',
-    action: 'view',
-    timestamp: '2025-04-02T09:15:00Z',
-    user: 'Marketing Team'
-  },
-  {
-    id: 'a2',
-    action: 'download',
-    timestamp: '2025-04-01T16:45:00Z',
-    user: 'John Doe'
-  },
-  {
-    id: 'a3',
-    action: 'share',
-    timestamp: '2025-03-28T11:30:00Z',
-    user: 'Jane Smith'
-  }
-];
+import VersionService from '@/services/VersionService';
+import { Asset, AssetVersion, AssetActivity } from '@/types/asset.types';
+import VersionUploadModal from '@/components/assets/VersionUploadModal';
+import VersionComparisonView from '@/components/assets/VersionComparisonView';
+import ActivityLogList from '@/components/assets/ActivityLogList';
 
 const AssetDetailsPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const navigate = useNavigate();
   const [asset, setAsset] = useState<Asset | null>(null);
+  const [versions, setVersions] = useState<AssetVersion[]>([]);
+  const [activities, setActivities] = useState<AssetActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVersionsLoading, setIsVersionsLoading] = useState(true);
+  const [isActivitiesLoading, setIsActivitiesLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [shareUrl, setShareUrl] = useState('');
   const [activeTab, setActiveTab] = useState<'info' | 'versions' | 'activity'>('info');
   const [isEditing, setIsEditing] = useState(false);
   const [editedDescription, setEditedDescription] = useState('');
+  
+  // Version and activity management states
+  const [isVersionUploadModalOpen, setIsVersionUploadModalOpen] = useState(false);
+  const [selectedVersionForComparison, setSelectedVersionForComparison] = useState<AssetVersion | null>(null);
+  const [isComparisonViewOpen, setIsComparisonViewOpen] = useState(false);
   
   // Fetch asset data
   useEffect(() => {
@@ -82,6 +40,9 @@ const AssetDetailsPage = () => {
         const assetData = await AssetService.getAssetById(assetId);
         setAsset(assetData);
         setEditedDescription(assetData.metadata.description || '');
+        
+        // Log view activity
+        await VersionService.logView(assetId, assetData.version);
       } catch (err) {
         console.error('Error fetching asset:', err);
         setError(err as Error);
@@ -91,6 +52,44 @@ const AssetDetailsPage = () => {
     };
     
     fetchAsset();
+  }, [assetId]);
+  
+  // Fetch version history
+  useEffect(() => {
+    const fetchVersionHistory = async () => {
+      if (!assetId) return;
+      
+      try {
+        setIsVersionsLoading(true);
+        const versionData = await VersionService.getVersions(assetId);
+        setVersions(versionData);
+      } catch (err) {
+        console.error('Error fetching version history:', err);
+      } finally {
+        setIsVersionsLoading(false);
+      }
+    };
+    
+    fetchVersionHistory();
+  }, [assetId]);
+  
+  // Fetch activity history
+  useEffect(() => {
+    const fetchActivityHistory = async () => {
+      if (!assetId) return;
+      
+      try {
+        setIsActivitiesLoading(true);
+        const activityData = await VersionService.getActivities(assetId);
+        setActivities(activityData);
+      } catch (err) {
+        console.error('Error fetching activity history:', err);
+      } finally {
+        setIsActivitiesLoading(false);
+      }
+    };
+    
+    fetchActivityHistory();
   }, [assetId]);
   
   // Format file size
@@ -112,9 +111,15 @@ const AssetDetailsPage = () => {
   };
   
   // Generate and display share URL
-  const handleShare = () => {
-    const url = `${window.location.origin}/share/${assetId}?token=${Date.now()}`;
+  const handleShare = async () => {
+    if (!asset || !assetId) return;
+    
+    const token = Date.now().toString();
+    const url = `${window.location.origin}/share/${assetId}?token=${token}`;
     setShareUrl(url);
+    
+    // Log share activity
+    await VersionService.logShare(assetId, token);
   };
   
   // Copy URL to clipboard
@@ -125,8 +130,8 @@ const AssetDetailsPage = () => {
   };
   
   // Download asset
-  const handleDownload = () => {
-    if (!asset) return;
+  const handleDownload = async () => {
+    if (!asset || !assetId) return;
     
     // Create a temporary anchor element
     const link = document.createElement('a');
@@ -135,6 +140,25 @@ const AssetDetailsPage = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Log download activity
+    await VersionService.logDownload(assetId, asset.version);
+  };
+  
+  // Download a specific version
+  const handleDownloadVersion = async (version: AssetVersion) => {
+    if (!assetId) return;
+    
+    // Create a temporary anchor element
+    const link = document.createElement('a');
+    link.href = version.fileUrl;
+    link.download = `${asset?.name || 'asset'}_v${version.versionNumber}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Log download activity
+    await VersionService.logDownload(assetId, version.versionNumber);
   };
   
   // Navigate back
@@ -144,7 +168,7 @@ const AssetDetailsPage = () => {
   
   // Save edited description
   const handleSaveDescription = async () => {
-    if (!asset) return;
+    if (!asset || !assetId) return;
     
     // In a real implementation, this would call an API to update the description
     // For now, just update the local state
@@ -160,7 +184,80 @@ const AssetDetailsPage = () => {
       };
     });
     
+    // Log edit activity
+    await VersionService.logEdit(assetId, 'metadata.description', editedDescription);
     setIsEditing(false);
+  };
+  
+  // Open version upload modal
+  const handleUploadVersionClick = () => {
+    setIsVersionUploadModalOpen(true);
+  };
+  
+  // Handle version upload
+  const handleVersionUpload = async (file: File, notes: string) => {
+    if (!assetId) return;
+    
+    // Upload new version
+    const newVersion = await VersionService.uploadVersion(assetId, file, notes);
+    
+    // Update versions list
+    setVersions(prev => [...prev, newVersion].sort((a, b) => b.versionNumber - a.versionNumber));
+    
+    // Update asset with new version number
+    if (asset) {
+      setAsset({
+        ...asset,
+        version: newVersion.versionNumber,
+        fileUrl: newVersion.fileUrl,
+        thumbnailUrl: newVersion.thumbnailUrl || asset.thumbnailUrl
+      });
+    }
+    
+    // Refresh activity history
+    const updatedActivities = await VersionService.getActivities(assetId);
+    setActivities(updatedActivities);
+    
+    setIsVersionUploadModalOpen(false);
+  };
+  
+  // Handle version restore
+  const handleRestoreVersion = async (version: AssetVersion) => {
+    if (!assetId || !asset) return;
+    
+    // Restore version
+    await VersionService.restoreVersion(assetId, version.versionNumber);
+    
+    // Update asset with restored version info
+    setAsset({
+      ...asset,
+      version: version.versionNumber,
+      fileUrl: version.fileUrl,
+      thumbnailUrl: version.thumbnailUrl || asset.thumbnailUrl
+    });
+    
+    // Refresh version history
+    const updatedVersions = await VersionService.getVersions(assetId);
+    setVersions(updatedVersions);
+    
+    // Refresh activity history
+    const updatedActivities = await VersionService.getActivities(assetId);
+    setActivities(updatedActivities);
+    
+    setIsComparisonViewOpen(false);
+  };
+  
+  // Open version comparison view
+  const handleCompareVersions = (version: AssetVersion) => {
+    if (!versions.length) return;
+    
+    setSelectedVersionForComparison(version);
+    setIsComparisonViewOpen(true);
+  };
+  
+  // Get current version for comparison
+  const getCurrentVersion = (): AssetVersion | null => {
+    return versions.find(v => v.isCurrentVersion) || null;
   };
   
   // Render asset preview based on file type
@@ -341,33 +438,75 @@ const AssetDetailsPage = () => {
           <VersionsContainer>
             <SectionHeader>
               <h3>Version History</h3>
-              <Button variant="outlined" size="small">Upload New Version</Button>
+              <Button 
+                variant="outlined" 
+                size="small"
+                onClick={handleUploadVersionClick}
+              >
+                Upload New Version
+              </Button>
             </SectionHeader>
             
-            {mockVersions.map(version => (
-              <VersionItem key={version.id}>
-                <VersionHeader>
-                  <VersionNumber>v{version.versionNumber}</VersionNumber>
-                  <VersionDate>{formatDate(version.createdAt)}</VersionDate>
-                </VersionHeader>
-                <VersionMeta>Uploaded by {version.createdBy}</VersionMeta>
-                <VersionNotes>{version.notes}</VersionNotes>
-                <VersionActions>
-                  <Button 
-                    variant="text" 
-                    size="small"
-                    onClick={handleDownload}
-                  >
-                    Download
-                  </Button>
-                  {version.versionNumber !== asset.version && (
-                    <Button variant="text" size="small">
-                      Restore
-                    </Button>
-                  )}
-                </VersionActions>
-              </VersionItem>
-            ))}
+            {isVersionsLoading ? (
+              <LoadingStateSmall>
+                <LoadingSpinner />
+                <LoadingText>Loading version history...</LoadingText>
+              </LoadingStateSmall>
+            ) : versions.length === 0 ? (
+              <EmptyVersions>
+                <EmptyIcon>📋</EmptyIcon>
+                <EmptyText>No version history available</EmptyText>
+              </EmptyVersions>
+            ) : (
+              <>
+                {versions.map(version => (
+                  <VersionItem key={version.id}>
+                    <VersionHeader>
+                      <VersionNumberContainer>
+                        <VersionNumber>v{version.versionNumber}</VersionNumber>
+                        {version.isCurrentVersion && (
+                          <CurrentVersionBadge>Current</CurrentVersionBadge>
+                        )}
+                      </VersionNumberContainer>
+                      <VersionDate>{formatDate(version.createdAt)}</VersionDate>
+                    </VersionHeader>
+                    <VersionMeta>Uploaded by {version.createdBy}</VersionMeta>
+                    <VersionNotes>{version.notes || <EmptyNotes>No notes provided</EmptyNotes>}</VersionNotes>
+                    <VersionDetails>
+                      <VersionDetail>
+                        <VersionDetailLabel>Size:</VersionDetailLabel>
+                        <VersionDetailValue>{formatFileSize(version.fileSize)}</VersionDetailValue>
+                      </VersionDetail>
+                    </VersionDetails>
+                    <VersionActions>
+                      <Button 
+                        variant="text" 
+                        size="small"
+                        onClick={() => handleDownloadVersion(version)}
+                      >
+                        Download
+                      </Button>
+                      <Button 
+                        variant="text" 
+                        size="small"
+                        onClick={() => handleCompareVersions(version)}
+                      >
+                        Compare
+                      </Button>
+                      {!version.isCurrentVersion && (
+                        <Button 
+                          variant="text" 
+                          size="small"
+                          onClick={() => handleRestoreVersion(version)}
+                        >
+                          Restore
+                        </Button>
+                      )}
+                    </VersionActions>
+                  </VersionItem>
+                ))}
+              </>
+            )}
           </VersionsContainer>
         );
         
@@ -375,26 +514,17 @@ const AssetDetailsPage = () => {
         return (
           <ActivityContainer>
             <SectionHeader>
-              <h3>Recent Activity</h3>
+              <h3>Activity History</h3>
             </SectionHeader>
             
-            {mockActivity.map(activity => (
-              <ActivityItem key={activity.id}>
-                <ActivityIcon>
-                  {activity.action === 'view' ? '👁️' : 
-                   activity.action === 'download' ? '⬇️' : '🔗'}
-                </ActivityIcon>
-                <ActivityContent>
-                  <ActivityText>
-                    <strong>{activity.user}</strong> {activity.action === 'view' ? 'viewed' : 
-                                                   activity.action === 'download' ? 'downloaded' : 'shared'} this asset
-                  </ActivityText>
-                  <ActivityTime>
-                    {formatDate(activity.timestamp)}
-                  </ActivityTime>
-                </ActivityContent>
-              </ActivityItem>
-            ))}
+            {isActivitiesLoading ? (
+              <LoadingStateSmall>
+                <LoadingSpinner />
+                <LoadingText>Loading activity history...</LoadingText>
+              </LoadingStateSmall>
+            ) : (
+              <ActivityLogList activities={activities} />
+            )}
           </ActivityContainer>
         );
     }
@@ -467,7 +597,7 @@ const AssetDetailsPage = () => {
               className={activeTab === 'versions' ? 'active' : ''} 
               onClick={() => setActiveTab('versions')}
             >
-              Versions ({mockVersions.length})
+              Versions ({versions.length})
             </Tab>
             <Tab 
               className={activeTab === 'activity' ? 'active' : ''} 
@@ -482,6 +612,30 @@ const AssetDetailsPage = () => {
           </TabContent>
         </MetadataContainer>
       </ContentContainer>
+      
+      {/* Version Upload Modal */}
+      {asset && (
+        <VersionUploadModal
+          asset={asset}
+          isOpen={isVersionUploadModalOpen}
+          onClose={() => setIsVersionUploadModalOpen(false)}
+          onUpload={handleVersionUpload}
+        />
+      )}
+      
+      {/* Version Comparison View */}
+      {isComparisonViewOpen && selectedVersionForComparison && getCurrentVersion() && (
+        <ModalOverlay>
+          <ComparisonContainer>
+            <VersionComparisonView
+              currentVersion={getCurrentVersion()!}
+              previousVersion={selectedVersionForComparison}
+              onClose={() => setIsComparisonViewOpen(false)}
+              onRestore={handleRestoreVersion}
+            />
+          </ComparisonContainer>
+        </ModalOverlay>
+      )}
     </Container>
   );
 };
@@ -945,6 +1099,101 @@ const ErrorMessage = styled.p`
   color: ${({ theme }) => theme.colors.text};
   font-size: ${({ theme }) => theme.typography.fontSizes.lg};
   margin-bottom: ${({ theme }) => theme.spacing[6]};
+`;
+
+// New styled components for version history
+const LoadingStateSmall = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: ${({ theme }) => theme.spacing[6]};
+  text-align: center;
+`;
+
+const EmptyVersions = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: ${({ theme }) => theme.spacing[6]};
+  color: ${({ theme }) => theme.colors.textSecondary};
+  text-align: center;
+`;
+
+const EmptyIcon = styled.div`
+  font-size: 2.5rem;
+  margin-bottom: ${({ theme }) => theme.spacing[3]};
+`;
+
+const EmptyText = styled.div`
+  font-style: italic;
+  font-size: ${({ theme }) => theme.typography.fontSizes.md};
+`;
+
+const EmptyNotes = styled.span`
+  font-style: italic;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: ${({ theme }) => theme.typography.fontSizes.sm};
+`;
+
+const VersionNumberContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing[2]};
+`;
+
+const CurrentVersionBadge = styled.span`
+  background-color: ${({ theme }) => theme.colors.success + '20'};
+  color: ${({ theme }) => theme.colors.success};
+  padding: ${({ theme }) => `${theme.spacing[1]} ${theme.spacing[2]}`};
+  border-radius: ${({ theme }) => theme.borderRadius.full};
+  font-size: ${({ theme }) => theme.typography.fontSizes.xs};
+  font-weight: ${({ theme }) => theme.typography.fontWeights.medium};
+`;
+
+const VersionDetails = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.spacing[3]};
+  margin: ${({ theme }) => theme.spacing[3]} 0;
+  font-size: ${({ theme }) => theme.typography.fontSizes.sm};
+`;
+
+const VersionDetail = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const VersionDetailLabel = styled.span`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-right: ${({ theme }) => theme.spacing[1]};
+`;
+
+const VersionDetailValue = styled.span`
+  font-weight: ${({ theme }) => theme.typography.fontWeights.medium};
+`;
+
+// Modal overlay for version comparison
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: ${({ theme }) => theme.spacing[4]};
+  z-index: ${({ theme }) => theme.zIndices[50]};
+`;
+
+const ComparisonContainer = styled.div`
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow: auto;
 `;
 
 export default AssetDetailsPage;
