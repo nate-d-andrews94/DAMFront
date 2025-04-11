@@ -1,49 +1,46 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 import { Asset } from '@/types/asset.types';
 import AssetCard from './AssetCard';
 
 interface AssetGridProps {
   assets: Asset[];
-  className?: string;
-  emptyState?: React.ReactNode;
-  loading?: boolean;
+  onAssetClick?: (asset: Asset) => void;
+  isLoading?: boolean;
+  emptyMessage?: string;
 }
 
-const AssetGrid: React.FC<AssetGridProps> = ({ 
-  assets, 
-  className,
-  emptyState,
-  loading = false,
+const AssetGrid: React.FC<AssetGridProps> = ({
+  assets,
+  onAssetClick,
+  isLoading = false,
+  emptyMessage = 'No assets found'
 }) => {
-  const navigate = useNavigate();
-  
-  const handleAssetClick = (assetId: string) => {
-    navigate(`/assets/${assetId}`);
-  };
-  
-  if (loading) {
+  if (isLoading) {
     return (
-      <GridContainer className={className}>
-        {Array.from({ length: 8 }).map((_, index) => (
-          <SkeletonCard key={index} />
-        ))}
-      </GridContainer>
+      <LoadingContainer>
+        <LoadingSpinner />
+        <LoadingText>Loading assets...</LoadingText>
+      </LoadingContainer>
     );
   }
-  
-  if (assets.length === 0 && emptyState) {
-    return <>{emptyState}</>;
+
+  if (assets.length === 0) {
+    return (
+      <EmptyState>
+        <EmptyIcon>📁</EmptyIcon>
+        <EmptyText>{emptyMessage}</EmptyText>
+      </EmptyState>
+    );
   }
-  
+
   return (
-    <GridContainer className={className}>
+    <GridContainer>
       {assets.map((asset) => (
-        <AssetCard 
+        <AssetCard
           key={asset.id}
           asset={asset}
-          onClick={() => handleAssetClick(asset.id)}
+          onClick={() => onAssetClick && onAssetClick(asset)}
         />
       ))}
     </GridContainer>
@@ -53,38 +50,59 @@ const AssetGrid: React.FC<AssetGridProps> = ({
 const GridContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: ${({ theme }) => theme.spacing[6]};
+  gap: 1.5rem;
 `;
 
-const SkeletonCard = styled.div`
-  border-radius: ${({ theme }) => theme.borderRadius.lg};
-  overflow: hidden;
-  background-color: ${({ theme }) => theme.colors.surface};
-  height: 280px;
-  
-  &::after {
-    content: '';
-    display: block;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      ${({ theme }) => theme.colors.surface} 25%,
-      ${({ theme }) => theme.colors.border} 50%,
-      ${({ theme }) => theme.colors.surface} 75%
-    );
-    background-size: 200% 100%;
-    animation: loading 1.5s infinite;
-  }
-  
-  @keyframes loading {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+`;
+
+const LoadingSpinner = styled.div`
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #3B82F6;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
     }
   }
+`;
+
+const LoadingText = styled.p`
+  color: #6B7280;
+  font-size: 1rem;
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #F9FAFB;
+  border-radius: 0.5rem;
+  padding: 3rem;
+  text-align: center;
+`;
+
+const EmptyIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #9CA3AF;
+`;
+
+const EmptyText = styled.p`
+  color: #6B7280;
+  font-size: 1rem;
 `;
 
 export default AssetGrid;

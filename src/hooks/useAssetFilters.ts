@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import useAssetStore from '@/store/assetStore';
 import AssetService from '@/services/assetService';
-import { Asset } from '@/types/asset.types';
+import { Asset, FilterCategory, FilterValue } from '@/types/asset.types';
 
 interface UseAssetFiltersResult {
   assets: Asset[];
@@ -14,6 +14,8 @@ interface UseAssetFiltersResult {
   selectedFilterValues: string[];
   setSelectedFilterValues: (values: string[]) => void;
   clearFilters: () => void;
+  filterCategories: FilterCategory[];
+  filterValues: FilterValue[];
 }
 
 const useAssetFilters = (): UseAssetFiltersResult => {
@@ -33,70 +35,64 @@ const useAssetFilters = (): UseAssetFiltersResult => {
   } = useAssetStore();
   
   const [error, setError] = useState<Error | null>(null);
-  
-  // Fetch assets
-  const { isLoading: isLoadingAssetData } = useQuery(
-    'assets',
-    () => AssetService.getAssets(),
-    {
-      onSuccess: (data) => {
-        setAssets(data);
+
+  // Use a single effect to fetch data instead of multiple queries
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoadingAssets(true);
+        
+        // Fetch assets
+        const assetsData = await AssetService.getAssets();
+        setAssets(assetsData);
+        
+        // Fetch categories
+        const categoriesData = await AssetService.getFilterCategories();
+        setFilterCategories(categoriesData);
+        
+        // Fetch values
+        const valuesData = await AssetService.getFilterValues();
+        setFilterValues(valuesData);
+        
         setIsLoadingAssets(false);
-      },
-      onError: (err: Error) => {
-        setError(err);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err as Error);
         setIsLoadingAssets(false);
-      },
-    }
-  );
-  
-  // Fetch filter categories
-  useQuery(
-    'filterCategories',
-    () => AssetService.getFilterCategories(),
-    {
-      onSuccess: (data) => {
-        setFilterCategories(data);
-      },
-      onError: (err: Error) => {
-        setError(err);
-      },
-    }
-  );
-  
-  // Fetch filter values
-  useQuery(
-    'filterValues',
-    () => AssetService.getFilterValues(),
-    {
-      onSuccess: (data) => {
-        setFilterValues(data);
-      },
-      onError: (err: Error) => {
-        setError(err);
-      },
-    }
-  );
+      }
+    };
+    
+    fetchData();
+  }, [setAssets, setFilterCategories, setFilterValues, setIsLoadingAssets]);
   
   // When assets or filter state changes, apply filters
   const filteredAssets = useMemo(() => {
+    // Handle case where assets might be undefined or null
+    if (!assets || !Array.isArray(assets)) {
+      return [];
+    }
+    
     let result = [...assets];
     
     // Apply search query filter
-    if (searchQuery.trim()) {
+    if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter(asset => 
         asset.name.toLowerCase().includes(query) ||
-        asset.tags.some(tag => tag.toLowerCase().includes(query)) ||
-        (asset.metadata.description && asset.metadata.description.toLowerCase().includes(query))
+        (Array.isArray(asset.tags) && asset.tags.some(tag => 
+          typeof tag === 'string' && tag.toLowerCase().includes(query)
+        )) ||
+        (asset.metadata && asset.metadata.description && 
+         asset.metadata.description.toLowerCase().includes(query))
       );
     }
     
     // Apply selected filter values
-    if (selectedFilterValues.length > 0) {
+    if (selectedFilterValues && selectedFilterValues.length > 0) {
       result = result.filter(asset => 
+        Array.isArray(asset.filterAssignments) && 
         asset.filterAssignments.some(assignment => 
-          selectedFilterValues.includes(assignment.filterValueId)
+          assignment && selectedFilterValues.includes(assignment.filterValueId)
         )
       );
     }
@@ -110,10 +106,7 @@ const useAssetFilters = (): UseAssetFiltersResult => {
     setSelectedFilterValues([]);
   };
   
-  // Set loading state
-  useEffect(() => {
-    setIsLoadingAssets(isLoadingAssetData);
-  }, [isLoadingAssetData, setIsLoadingAssets]);
+  // No need for this effect since we're directly setting loading state in our fetch useEffect
   
   return {
     assets,
@@ -124,7 +117,9 @@ const useAssetFilters = (): UseAssetFiltersResult => {
     setSearchQuery,
     selectedFilterValues,
     setSelectedFilterValues,
-    clearFilters
+    clearFilters,
+    filterCategories,
+    filterValues
   };
 };
 

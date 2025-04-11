@@ -63,7 +63,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           );
           
           return (
-            <FilterCategory key={category.id}>
+            <FilterCategoryItem key={category.id}>
               <CategoryHeader onClick={() => toggleCategory(category.id)}>
                 <CategoryTitle hasSelected={hasSelectedValues}>
                   {category.name}
@@ -94,7 +94,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                   )}
                 </ValueList>
               )}
-            </FilterCategory>
+            </FilterCategoryItem>
           );
         })}
         
@@ -144,7 +144,7 @@ const FilterList = styled.div`
   gap: ${({ theme }) => theme.spacing[2]};
 `;
 
-const FilterCategory = styled.div`
+const FilterCategoryItem = styled.div`
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   padding-bottom: ${({ theme }) => theme.spacing[2]};
   

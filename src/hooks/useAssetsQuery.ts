@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { AssetService } from '../services/AssetService';
-import { AssetQueryParams, AssetType } from '../services/db/types';
+import AssetService from '@/services/assetService';
+import { Asset as AssetType } from '@/types/asset.types';
+import { AssetQueryParams } from '@/services/db/types';
 
 /**
  * Hook for fetching assets from the database with filtering and pagination
  */
-export function useAssetsQuery(params: AssetQueryParams = {}) {
-  return useQuery<{ assets: AssetType[], total: number }>({
-    queryKey: ['assets', params],
-    queryFn: () => AssetService.getAssets(params)
+export function useAssetsQuery() {
+  return useQuery<AssetType[]>({
+    queryKey: ['assets'],
+    queryFn: () => AssetService.getAssets()
   });
 }
 
