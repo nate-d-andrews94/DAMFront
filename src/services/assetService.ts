@@ -193,12 +193,15 @@ const AssetService = {
       await delay(500);
       const asset = mockAssets.find(a => a.id === id);
       
-      // Return a valid asset, even if not found
+      // Check if asset exists
+      if (!asset) {
+        throw new Error('Asset not found');
+      }
+      
       return ensureValidAsset(asset);
     } catch (error) {
       console.error(`Error fetching asset ${id}:`, error);
-      // Return empty asset instead of throwing
-      return createEmptyAsset();
+      throw error; // Re-throw the error to properly handle the rejection
     }
   },
   

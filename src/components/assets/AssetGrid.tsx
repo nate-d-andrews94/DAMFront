@@ -8,13 +8,19 @@ interface AssetGridProps {
   onAssetClick?: (asset: Asset) => void;
   isLoading?: boolean;
   emptyMessage?: string;
+  selectionMode?: boolean;
+  selectedAssets?: Asset[];
+  onSelectAsset?: (asset: Asset) => void;
 }
 
 const AssetGrid: React.FC<AssetGridProps> = ({
   assets,
   onAssetClick,
   isLoading = false,
-  emptyMessage = 'No assets found'
+  emptyMessage = 'No assets found',
+  selectionMode = false,
+  selectedAssets = [],
+  onSelectAsset
 }) => {
   if (isLoading) {
     return (
@@ -41,6 +47,9 @@ const AssetGrid: React.FC<AssetGridProps> = ({
           key={asset.id}
           asset={asset}
           onClick={() => onAssetClick && onAssetClick(asset)}
+          selectionMode={selectionMode}
+          isSelected={selectedAssets.some(a => a.id === asset.id)}
+          onSelect={onSelectAsset}
         />
       ))}
     </GridContainer>

@@ -7,12 +7,30 @@ import Card from '@/components/ui/Card';
 interface AssetCardProps {
   asset: Asset;
   onClick?: () => void;
+  isSelected?: boolean;
+  onSelect?: (asset: Asset) => void;
+  selectionMode?: boolean;
 }
 
-const AssetCard: React.FC<AssetCardProps> = ({ asset, onClick }) => {
+const AssetCard: React.FC<AssetCardProps> = ({ 
+  asset, 
+  onClick, 
+  isSelected = false, 
+  onSelect, 
+  selectionMode = false 
+}) => {
   const handleClick = () => {
-    if (onClick) {
+    if (selectionMode && onSelect) {
+      onSelect(asset);
+    } else if (onClick) {
       onClick();
+    }
+  };
+  
+  const handleSelectClick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    if (onSelect) {
+      onSelect(asset);
     }
   };
   
@@ -39,7 +57,16 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, onClick }) => {
   };
   
   return (
-    <CardContainer interactive onClick={handleClick}>
+    <CardContainer interactive onClick={handleClick} isSelected={isSelected}>
+      {selectionMode && (
+        <SelectionCheckbox onClick={(e) => e.stopPropagation()}>
+          <SelectionInput 
+            type="checkbox" 
+            checked={isSelected} 
+            onChange={handleSelectClick} 
+          />
+        </SelectionCheckbox>
+      )}
       <ThumbnailContainer>
         {asset.thumbnailUrl ? (
           <Thumbnail src={asset.thumbnailUrl} alt={asset.name} />
@@ -79,12 +106,39 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, onClick }) => {
   );
 };
 
-const CardContainer = styled(Card)`
+const CardContainer = styled(Card)<{ isSelected?: boolean }>`
   display: flex;
   flex-direction: column;
   padding: 0;
   overflow: hidden;
   height: 100%;
+  position: relative;
+  ${({ isSelected, theme }) => isSelected && `
+    border: 2px solid ${theme.colors.primary};
+    box-shadow: 0 0 0 2px ${theme.colors.primaryLight};
+  `}
+`;
+
+const SelectionCheckbox = styled.div`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  height: 24px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const SelectionInput = styled.input`
+  cursor: pointer;
+  margin: 0;
+  height: 16px;
+  width: 16px;
 `;
 
 const ThumbnailContainer = styled.div`

@@ -4,10 +4,13 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import AssetGrid from '@/components/assets/AssetGrid';
 import FilterPanel from '@/components/assets/FilterPanel';
 import FolderNavigation from '@/components/assets/FolderNavigation';
+import BatchOperationsBar from '@/components/assets/BatchOperationsBar';
 import QuickSearchShortcuts from '@/components/search/QuickSearchShortcuts';
 import Button from '@/components/ui/Button';
 import { Asset } from '@/types/asset.types';
 import useAssetFilters from '@/hooks/useAssetFilters';
+import useAssetStore from '@/store/assetStore';
+import { useAssetMutations } from '@/hooks/useAssetMutations';
 
 // Mock folder data for development
 const mockFolders = [
@@ -30,6 +33,19 @@ const AssetLibraryPage = () => {
   // Define default values
   const [localError, setLocalError] = useState<Error | null>(null);
   const [localIsLoading, setLocalIsLoading] = useState(true);
+  
+  // Use asset store for selection state
+  const {
+    selectedAssets,
+    toggleAssetSelection,
+    clearSelectedAssets
+  } = useAssetStore();
+  
+  // Get asset mutations
+  const { addTagsToAsset, deleteAsset } = useAssetMutations();
+  
+  // Selection mode state
+  const [selectionMode, setSelectionMode] = useState(false);
   
   // Use try-catch to safely use the hook
   let filteredAssets: any[] = [];
@@ -72,6 +88,14 @@ const AssetLibraryPage = () => {
   
   const [assetTypeFilter, setAssetTypeFilter] = useState<string>('all');
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+
+  // Toggle selection mode
+  const toggleSelectionMode = () => {
+    setSelectionMode(prev => !prev);
+    if (selectionMode) {
+      clearSelectedAssets();
+    }
+  };
   
   // Apply asset type filtering on top of other filters
   const filteredByTypeAssets = Array.isArray(filteredAssets) ? filteredAssets.filter(asset => {
@@ -109,7 +133,16 @@ const AssetLibraryPage = () => {
   
   // Handle asset selection
   const handleAssetClick = (asset: Asset) => {
-    navigate(`/assets/${asset.id}`);
+    if (selectionMode) {
+      toggleAssetSelection(asset);
+    } else {
+      navigate(`/assets/${asset.id}`);
+    }
+  };
+  
+  // Handle asset selection from checkbox
+  const handleAssetSelect = (asset: Asset) => {
+    toggleAssetSelection(asset);
   };
   
   // Reset button to clear all filters and search
@@ -122,6 +155,59 @@ const AssetLibraryPage = () => {
   // Navigate to upload page
   const handleUploadClick = () => {
     navigate('/upload');
+  };
+  
+  // Handle batch tag assets
+  const handleTagAssets = async (assets: Asset[], tags: string[]) => {
+    try {
+      // In a real implementation, we would create tags if they don't exist
+      // and then associate them with assets
+      console.log(`Tagging ${assets.length} assets with ${tags.join(', ')}`);
+      
+      // Example of what the real implementation might look like
+      for (const asset of assets) {
+        await addTagsToAsset.mutateAsync({ 
+          assetId: asset.id, 
+          tagIds: tags // This would normally be tag IDs, not names
+        });
+      }
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error tagging assets:', error);
+      return Promise.reject(error);
+    }
+  };
+
+  // Handle batch move assets
+  const handleMoveAssets = async (assets: Asset[], targetFolder: string) => {
+    try {
+      // In a real implementation, we would update the folder path for each asset
+      console.log(`Moving ${assets.length} assets to ${targetFolder}`);
+      
+      // This would normally call an API to update the assets
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error moving assets:', error);
+      return Promise.reject(error);
+    }
+  };
+
+  // Handle batch delete assets
+  const handleDeleteAssets = async (assets: Asset[]) => {
+    try {
+      console.log(`Deleting ${assets.length} assets`);
+      
+      // Example of what the real implementation might look like
+      for (const asset of assets) {
+        await deleteAsset.mutateAsync(asset.id);
+      }
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error deleting assets:', error);
+      return Promise.reject(error);
+    }
   };
   
   return (
@@ -153,6 +239,12 @@ const AssetLibraryPage = () => {
           </SearchForm>
           <ButtonGroup>
             <AdvancedSearchLink to="/search">Advanced Search</AdvancedSearchLink>
+            <SelectionModeButton 
+              isActive={selectionMode} 
+              onClick={toggleSelectionMode}
+            >
+              {selectionMode ? 'Exit Selection' : 'Select Assets'}
+            </SelectionModeButton>
             <UploadButton onClick={handleUploadClick}>Upload</UploadButton>
           </ButtonGroup>
         </HeaderRight>
@@ -245,6 +337,9 @@ const AssetLibraryPage = () => {
                 assets={filteredByTypeAssets || []}
                 onAssetClick={handleAssetClick}
                 isLoading={false}
+                selectionMode={selectionMode}
+                selectedAssets={selectedAssets}
+                onSelectAsset={handleAssetSelect}
                 emptyMessage={
                   searchQuery || (selectedFilterValues && selectedFilterValues.length > 0) || assetTypeFilter !== 'all'
                     ? 'No assets match your filters. Try adjusting your search criteria.'
@@ -253,6 +348,17 @@ const AssetLibraryPage = () => {
                       : 'No assets found. Upload assets to get started.'
                 }
               />
+              
+              {/* Batch Operations Bar - Only shown when assets are selected */}
+              {selectedAssets.length > 0 && (
+                <BatchOperationsBar
+                  selectedAssets={selectedAssets}
+                  onClearSelection={clearSelectedAssets}
+                  onTagAssets={handleTagAssets}
+                  onMoveAssets={handleMoveAssets}
+                  onDeleteAssets={handleDeleteAssets}
+                />
+              )}
             </>
           )}
         </MainContent>
@@ -387,6 +493,28 @@ const AdvancedSearchLink = styled(Link)`
   }
 `;
 
+const SelectionModeButton = styled.button<{ isActive: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: ${({ theme }) => `${theme.spacing[2]} ${theme.spacing[4]}`};
+  background-color: ${({ isActive, theme }) => 
+    isActive ? theme.colors.primary : 'transparent'};
+  color: ${({ isActive, theme }) => 
+    isActive ? 'white' : theme.colors.primary};
+  border: 1px solid ${({ theme }) => theme.colors.primary};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-weight: ${({ theme }) => theme.typography.fontWeights.medium};
+  cursor: pointer;
+  transition: all ${({ theme }) => theme.transitions.fast};
+  white-space: nowrap;
+  
+  &:hover {
+    background-color: ${({ isActive, theme }) => 
+      isActive ? theme.colors.primaryDark : theme.colors.primaryLight + '20'};
+  }
+`;
+
 const UploadButton = styled(Button).attrs({ variant: 'primary' })`
   white-space: nowrap;
 `;
@@ -480,6 +608,7 @@ const MainContent = styled.main`
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: ${({ theme }) => theme.borderRadius.md};
   padding: ${({ theme }) => theme.spacing[4]};
+  position: relative;
 `;
 
 const LoadingContainer = styled.div`

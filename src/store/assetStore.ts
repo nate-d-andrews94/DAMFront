@@ -6,6 +6,9 @@ interface AssetState {
   assets: Asset[];
   isLoadingAssets: boolean;
   
+  // Selected assets for batch operations
+  selectedAssets: Asset[];
+  
   // Filters
   filterCategories: FilterCategory[];
   filterValues: FilterValue[];
@@ -21,6 +24,12 @@ interface AssetState {
   setFilterValues: (values: FilterValue[]) => void;
   setSelectedFilterValues: (selectedValues: string[]) => void;
   setSearchQuery: (query: string) => void;
+  
+  // Selection actions
+  selectAsset: (asset: Asset) => void;
+  deselectAsset: (assetId: string) => void;
+  toggleAssetSelection: (asset: Asset) => void;
+  clearSelectedAssets: () => void;
   
   // Upload
   uploadedFiles: File[];
@@ -38,6 +47,9 @@ const useAssetStore = create<AssetState>((set) => ({
   // Assets
   assets: [],
   isLoadingAssets: false,
+  
+  // Selected assets for batch operations
+  selectedAssets: [],
   
   // Filters
   filterCategories: [],
@@ -90,6 +102,34 @@ const useAssetStore = create<AssetState>((set) => ({
       }
     })),
     
+  // Selection actions
+  selectAsset: (asset) => set((state) => {
+    // Only add the asset if it's not already selected
+    if (!state.selectedAssets.some(a => a.id === asset.id)) {
+      return { selectedAssets: [...state.selectedAssets, asset] };
+    }
+    return {};
+  }),
+  
+  deselectAsset: (assetId) => set((state) => ({
+    selectedAssets: state.selectedAssets.filter(a => a.id !== assetId)
+  })),
+  
+  toggleAssetSelection: (asset) => set((state) => {
+    const isSelected = state.selectedAssets.some(a => a.id === asset.id);
+    if (isSelected) {
+      return {
+        selectedAssets: state.selectedAssets.filter(a => a.id !== asset.id)
+      };
+    } else {
+      return {
+        selectedAssets: [...state.selectedAssets, asset]
+      };
+    }
+  }),
+  
+  clearSelectedAssets: () => set({ selectedAssets: [] }),
+  
   setIsUploading: (isUploading) => set({ isUploading })
 }));
 
