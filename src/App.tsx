@@ -12,6 +12,8 @@ import TagManagementPage from './pages/TagManagementPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminUploadPage from './pages/admin/AdminUploadPage';
 import AdminFilterCategoryPage from './pages/admin/AdminFilterCategoryPage';
+import UserManagementPage from './pages/admin/UserManagementPage';
+import GroupManagementPage from './pages/admin/GroupManagementPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -29,6 +31,8 @@ function App() {
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/upload" element={<AdminUploadPage />} />
           <Route path="/admin/filters" element={<AdminFilterCategoryPage />} />
+          <Route path="/admin/users" element={<UserManagementPage />} />
+          <Route path="/admin/groups" element={<GroupManagementPage />} />
           <Route path="/404" element={<NotFoundPage />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

@@ -9,22 +9,56 @@ const AdminDashboardPage = () => {
         <ActionButton as={Link} to="/admin/upload">Upload Assets</ActionButton>
       </PageHeader>
       
+      <AdminPanels>
+        <AdminPanel to="/admin/users">
+          <AdminPanelIcon>👤</AdminPanelIcon>
+          <AdminPanelTitle>User Management</AdminPanelTitle>
+          <AdminPanelDescription>
+            Manage users, roles, and accounts
+          </AdminPanelDescription>
+        </AdminPanel>
+        
+        <AdminPanel to="/admin/groups">
+          <AdminPanelIcon>👥</AdminPanelIcon>
+          <AdminPanelTitle>Group Management</AdminPanelTitle>
+          <AdminPanelDescription>
+            Manage user groups and permissions
+          </AdminPanelDescription>
+        </AdminPanel>
+        
+        <AdminPanel to="/admin/upload">
+          <AdminPanelIcon>📁</AdminPanelIcon>
+          <AdminPanelTitle>Upload Assets</AdminPanelTitle>
+          <AdminPanelDescription>
+            Upload and manage digital assets
+          </AdminPanelDescription>
+        </AdminPanel>
+        
+        <AdminPanel to="/admin/filters">
+          <AdminPanelIcon>🏷️</AdminPanelIcon>
+          <AdminPanelTitle>Filter Categories</AdminPanelTitle>
+          <AdminPanelDescription>
+            Manage metadata and filter categories
+          </AdminPanelDescription>
+        </AdminPanel>
+      </AdminPanels>
+      
       <StatsGrid>
+        <StatCard>
+          <StatValue>6</StatValue>
+          <StatLabel>Total Users</StatLabel>
+        </StatCard>
+        <StatCard>
+          <StatValue>5</StatValue>
+          <StatLabel>User Groups</StatLabel>
+        </StatCard>
         <StatCard>
           <StatValue>0</StatValue>
           <StatLabel>Total Assets</StatLabel>
         </StatCard>
         <StatCard>
           <StatValue>0</StatValue>
-          <StatLabel>Recent Uploads</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatValue>0</StatValue>
           <StatLabel>Total Views</StatLabel>
-        </StatCard>
-        <StatCard>
-          <StatValue>0</StatValue>
-          <StatLabel>Filter Categories</StatLabel>
         </StatCard>
       </StatsGrid>
       
@@ -155,6 +189,54 @@ const EmptyState = styled.div`
   p {
     margin-bottom: ${({ theme }) => theme.spacing[4]};
   }
+`;
+
+const AdminPanels = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: ${({ theme }) => theme.spacing[6]};
+  margin-bottom: ${({ theme }) => theme.spacing[8]};
+`;
+
+const AdminPanel = styled(Link)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: ${({ theme }) => theme.spacing[6]};
+  background-color: ${({ theme }) => theme.colors.surface};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  box-shadow: ${({ theme }) => theme.shadows.md};
+  transition: transform ${({ theme }) => theme.transitions.fast},
+              box-shadow ${({ theme }) => theme.transitions.fast};
+  text-decoration: none;
+  color: inherit;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: ${({ theme }) => theme.shadows.lg};
+    text-decoration: none;
+    color: inherit;
+  }
+`;
+
+const AdminPanelIcon = styled.div`
+  font-size: 2.5rem;
+  margin-bottom: ${({ theme }) => theme.spacing[3]};
+`;
+
+const AdminPanelTitle = styled.h3`
+  margin-bottom: ${({ theme }) => theme.spacing[2]};
+  font-size: ${({ theme }) => theme.typography.fontSizes.lg};
+  font-weight: ${({ theme }) => theme.typography.fontWeights.semibold};
+  text-align: center;
+`;
+
+const AdminPanelDescription = styled.p`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  text-align: center;
+  font-size: ${({ theme }) => theme.typography.fontSizes.sm};
+  margin: 0;
 `;
 
 export default AdminDashboardPage;
