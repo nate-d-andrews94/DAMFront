@@ -6,11 +6,49 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "nodemon src/index.js",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "claude:context": "node scripts/update-claude-context.js",
     "claude:audit": "node scripts/claude-security-audit.js",
     "claude:pilot": "node scripts/claude-pilot.js",
     "claude:report": "node -e \"console.log(require('./scripts/track-claude-usage.js').generateReport())\"",
     "claude:agent": "node scripts/claude-agent.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-icons": "^5.0.1",
+    "react-query": "^3.39.3",
+    "react-router-dom": "^6.22.1",
+    "styled-components": "^6.1.8",
+    "uuid": "^9.0.1",
+    "zustand": "^4.5.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^20.11.19",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "@types/uuid": "^9.0.8",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "jsdom": "^24.0.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.0",
+    "vitest": "^1.2.2"
   }
 }
