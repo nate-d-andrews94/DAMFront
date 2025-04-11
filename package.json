@@ -11,9 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "db:up": "docker-compose up -d postgres",
-    "db:down": "docker-compose down",
-    "db:reset": "docker-compose down -v && docker-compose up -d postgres"
+    "db:up": "docker compose up postgres",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up postgres"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.24.1",
